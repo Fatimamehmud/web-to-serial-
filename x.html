@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html >
+    <head>
+        <meta charset="utf-8">
+      <!--  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <title>Speech to text conversion using JavaScript</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">-->
+
+        <link rel="stylesheet" href="style.css">
+        <!--  <script type="text/javascript" src="script.js"></script>-->
+            <link href="https://fonts.googleapis.com/css?family=Shadows+Into+Light" rel="stylesheet">
+
+
+    </head>
+
+    <body>
+      <div class ="mycontainer">
+<h1>  تحويل من صوت الى نص </h1>
+<div class="mywebapp">
+  <div class ="input">
+      <textarea type="text" name="q" id="transcript" placeholder="تحدث" class="keyboardInput" rows="6"></textarea>
+    </div>
+  <form><input id="action" type="button" onclick="toggle()" value="ابداء" /></form>
+
+      <p id="instructions"> اضغط على ابداء  </p>
+  </div>
+</div>
+    </body>
+    <script>
+    var recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "ar";
+    var port ;
+
+    var listening = false;
+
+    recognition.onresult = function(event) {
+        var interim_transcript = '';
+        var final_transcript = '';
+
+        for (var i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final_transcript += event.results[i][0].transcript;
+             document.getElementById('transcript').value = final_transcript;
+            toggle();
+          } else {
+            interim_transcript += event.results[i][0].transcript;
+                document.getElementById('transcript').value = interim_transcript;
+          }
+        }
+        console.log(interim_transcript, final_transcript);
+
+      }
+
+    function toggle() {
+      if(listening) {
+        recognition.stop();
+        listening = false;
+      document.getElementById('action').value = "اضغط توقف";
+      }
+      else {
+        recognition.start();
+        listening = true;
+      document.getElementById('action').value = "اضغط بداء ";
+      }
+    }
+    //
+
+    document.querySelector('input').addEventListener('click', async () => {
+    const port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 9600 });
+
+  const textDecoder = new TextDecoderStream();
+  const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+  const reader = textDecoder.readable.getReader();
+
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) {
+
+      reader.releaseLock();
+      break;
+    }
+
+    console.log(value);
+
+    const textEncoder = new TextEncoderStream();
+  const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+
+  const writer = textEncoder.writable.getWriter();
+
+  await writer.write("يمين", "يسار");
+
+  writer.close();
+  await writableStreamClosed;
+
+  }
+
+  });
+    </script>
+</html>
